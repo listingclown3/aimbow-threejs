@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AimBow Physics Simulator - First Person Minecraft Experience</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            color: white;
+            cursor: none;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #00ff88;
+            max-width: 320px;
+        }
+        
+        .title {
+            font-size: 24px;
+            color: #00ff88;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ff88;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+        
+        .stats {
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .stat-value {
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            color: white;
+            font-size: 12px;
+            max-width: 300px;
+        }
+        
+        .trajectory-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            color: white;
+            font-size: 12px;
+            min-width: 200px;
+        }
+        
+        .projectile-button {
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            padding: 8px 12px;
+            margin: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+        
+        .projectile-button:hover {
+            background: #555;
+            border-color: #00ff88;
+        }
+        
+        .projectile-button.active {
+            background: #00ff88;
+            color: black;
+            font-weight: bold;
+        }
+        
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .crosshair::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 20px;
+            background: #00ff88;
+        }
+        
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 2px;
+            background: #00ff88;
+        }
+        
+        .charging-indicator {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #00ff88;
+            border-radius: 5px;
+            z-index: 10;
+            display: none;
+        }
+        
+        .charging-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s;
+        }
+        
+        .position-display {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            color: white;
+            font-size: 11px;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            color: #00ff88;
+            font-size: 18px;
+            z-index: 1000;
+        }
+        
+        .instruction-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            color: #00ff88;
+            font-size: 16px;
+            z-index: 1001;
+            border: 2px solid #00ff88;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div>Loading First Person AimBow Simulator...</div>
+        <div style="margin-top: 10px; font-size: 14px; color: #888;">
+            Initializing first-person Minecraft physics
+        </div>
+    </div>
+
+    <div class="instruction-popup" id="instructionPopup">
+        <div style="margin-bottom: 20px; color: #00ff88; font-size: 20px;">First Person AimBow</div>
+        <div style="margin-bottom: 15px;">Click anywhere to enable mouse look</div>
+        <div style="font-size: 14px; color: #888;">
+            WASD: Move | Arrows: Look | Space: Jump | Enter: Charge/Fire
+        </div>
+        <button onclick="document.getElementById('instructionPopup').style.display='none'" 
+                style="margin-top: 20px; padding: 10px 20px; background: #00ff88; color: black; border: none; border-radius: 5px; cursor: pointer;">
+            Start Playing
+        </button>
+    </div>
+
+    <div class="crosshair"></div>
+    
+    <div class="charging-indicator" id="chargingIndicator">
+        <div class="charging-bar" id="chargingBar"></div>
+    </div>
+
+    <div class="ui-overlay">
+        <div class="title">AimBow FPS</div>
+        <div class="subtitle">First Person Minecraft Physics</div>
+        <div class="stats">
+            <div>FPS: <span class="stat-value" id="fps">0</span></div>
+            <div>Trajectories: <span class="stat-value" id="trajectoryCount">0</span></div>
+            <div>Projectiles: <span class="stat-value" id="projectileCount">0</span></div>
+            <div>Draw Time: <span class="stat-value" id="drawTime">0.0s</span></div>
+            <div>Bow Force: <span class="stat-value" id="bowForce">0.0</span></div>
+            <div>Target Distance: <span class="stat-value" id="targetDistance">0.0m</span></div>
+            <div>Optimal Angle: <span class="stat-value" id="optimalAngle">N/A</span></div>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div style="margin-bottom: 10px; color: #00ff88;">First Person Controls:</div>
+        <div>• <strong>WASD</strong>: Move forward/back/left/right</div>
+        <div>• <strong>Arrow Keys</strong>: Look around (pitch/yaw)</div>
+        <div>• <strong>Mouse</strong>: Look around (when locked)</div>
+        <div>• <strong>Space</strong>: Jump</div>
+        <div>• <strong>Enter</strong>: Charge & fire projectile</div>
+        <div style="margin-top: 10px; color: #00ff88;">Other Controls:</div>
+        <div>• <strong>R</strong>: Reset trajectories</div>
+        <div>• <strong>T</strong>: Toggle target lock</div>
+        <div>• <strong>Buttons</strong>: Change weapon</div>
+    </div>
+
+    <div class="position-display">
+        <div style="color: #00ff88; margin-bottom: 5px;">Position:</div>
+        <div>X: <span class="stat-value" id="playerX">0.0</span></div>
+        <div>Y: <span class="stat-value" id="playerY">0.0</span></div>
+        <div>Z: <span class="stat-value" id="playerZ">0.0</span></div>
+    </div>
+
+    <div class="trajectory-info">
+        <div style="margin-bottom: 10px; color: #00ff88;">Projectile Types:</div>
+        <div id="projectile-buttons">
+            <button class="projectile-button active" data-type="bow">Bow & Arrow</button>
+            <button class="projectile-button" data-type="throwable">Snowball/Egg</button>
+            <button class="projectile-button" data-type="potion">Splash Potion</button>
+            <button class="projectile-button" data-type="enderpearl">Ender Pearl</button>
+            <button class="projectile-button" data-type="fishing">Fishing Rod</button>
+        </div>
+        <div style="margin-top: 15px;">
+            <div>Current: <span class="stat-value" id="currentProjectile">Bow & Arrow</span></div>
+            <div>Gravity: <span class="stat-value" id="currentGravity">0.05</span></div>
+            <div>Velocity: <span class="stat-value" id="currentVelocity">Variable</span></div>
+            <div>Air Resistance: <span class="stat-value" id="currentDrag">0.99</span></div>
+        </div>
+        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #333;">
+            <div style="color: #888; font-size: 11px;">
+                First Person Minecraft Experience<br>
+                Accurate bow charging mechanics<br>
+                WASD movement + Arrow look controls
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+    <script>
+        // Remove loading screen after everything loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+            }, 2000);
+        });
+
+        // Show charging indicator when bow is being drawn
+        setInterval(() => {
+            if (window.aimBowSimulator && window.aimBowSimulator.isCharging && window.aimBowSimulator.currentProjectileType.name === 'bow') {
+                const indicator = document.getElementById('chargingIndicator');
+                const bar = document.getElementById('chargingBar');
+                const chargeTime = (Date.now() - window.aimBowSimulator.chargeStartTime) / 1000;
+                const progress = Math.min(chargeTime / 1.0, 1.0) * 100;
+                
+                indicator.style.display = 'block';
+                bar.style.width = progress + '%';
+            } else {
+                document.getElementById('chargingIndicator').style.display = 'none';
+            }
+        }, 50);
+    </script>
+</body>
+</html>

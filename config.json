@@ -1,0 +1,25 @@
+{
+    "title": "AimBow Physics Simulator",
+    "description": "Interactive Minecraft projectile trajectory simulation with exact physics calculations",
+    "framework": "threejs",
+    "version": "1.0.0",
+    "controls": {
+        "mouse": "Rotate camera view, Click and hold to draw bow",
+        "scroll": "Zoom camera in/out",
+        "keyboard": "R = Reset trajectories, T = Toggle target lock, Arrow keys = Move target"
+    },
+    "features": [
+        "Exact Minecraft 1.8.9 physics calculations",
+        "Multiple projectile types (Bow, Snowball, Potion, etc.)",
+        "Reverse ballistics solver for optimal aiming",
+        "Real-time trajectory visualization",
+        "Interactive target system",
+        "Bow draw time mechanics"
+    ],
+    "loadTime": "~2 seconds",
+    "technical": {
+        "physics": "Ported from listingclown3/AimBow Java codebase",
+        "accuracy": "Pixel-perfect Minecraft simulation",
+        "calculations": "Real-time reverse ballistics solving"
+    }
+}
